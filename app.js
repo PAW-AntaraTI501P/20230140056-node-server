@@ -1,25 +1,30 @@
 const express = require("express");
 const cors = require("cors");
+const { router: todoRoutes, todos } = require("./routes/todos.js");
+
 const app = express();
 const port = 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // <- Wajib untuk parsing JSON body
 
-// Set view engine ke EJS
+// Routing API
+app.use("/todos", todoRoutes);
+
+// View engine
 app.set("view engine", "ejs");
 
-// Routing utama
+// Routing halaman
 app.get("/", (req, res) => {
-  res.render("index"); // Harus ada views/index.ejs
+  res.render("index");
 });
 
 app.get("/contact", (req, res) => {
-  res.render("contact"); // Harus ada views/contact.ejs
+  res.render("contact");
 });
 
-// Handler untuk route yang tidak ditemukan
+// Handler 404
 app.use((req, res) => {
   res.status(404).send("404 - Page Not Found");
 });
