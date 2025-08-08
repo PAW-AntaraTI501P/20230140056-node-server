@@ -1,21 +1,24 @@
+require("dotenv").config();
 const express = require("express");
-const cors = require("cors");
-const { router: todoRoutes, todos } = require("./routes/todos.js");
-
 const app = express();
-const port = 3001;
+const cors = require("cors");
+const port = process.env.PORT || 3001;
+const { router: todoRoutes, todos } = require("./routes/todo.js");
 
-// Middleware
 app.use(cors());
-app.use(express.json()); // <- Wajib untuk parsing JSON body
-
-// Routing API
-app.use("/todos", todoRoutes);
-
-// View engine
+app.use(express.json());
 app.set("view engine", "ejs");
 
-// Routing halaman
+app.use("/todos", todoRoutes);
+
+app.get("/todos-data", (req, res) => {
+  res.json(todos);
+});
+
+app.get("/todos-list", (req, res) => {
+  res.render("todos-page", { todos: todos });
+});
+
 app.get("/", (req, res) => {
   res.render("index");
 });
@@ -24,12 +27,10 @@ app.get("/contact", (req, res) => {
   res.render("contact");
 });
 
-// Handler 404
 app.use((req, res) => {
   res.status(404).send("404 - Page Not Found");
 });
 
-// Jalankan server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

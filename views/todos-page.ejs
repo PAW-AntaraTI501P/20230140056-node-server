@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Tugas Saya</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+      body {
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 50px;
+      }
+
+      .container {
+        background: rgba(30, 30, 30, 0.85);
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        max-width: 700px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #80ffdb;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        text-align: center;
+        color: #bbb;
+      }
+
+      .form-control {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        background-color: rgba(255, 255, 255, 0.12);
+        border-color: #80ffdb;
+        box-shadow: 0 0 10px rgba(128, 255, 219, 0.5);
+      }
+
+      .list-group-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: none;
+        color: #ddd;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: transform 0.2s ease, background 0.3s ease;
+      }
+
+      .list-group-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(1.02);
+      }
+
+      .btn {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success {
+        background-color: #00e676;
+        border: none;
+      }
+
+      .btn-success:hover {
+        background-color: #00c853;
+        box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+      }
+
+      .btn-warning {
+        background-color: #ffb300;
+        border: none;
+        color: #000;
+      }
+
+      .btn-warning:hover {
+        background-color: #ffa000;
+        box-shadow: 0 0 10px rgba(255, 179, 0, 0.6);
+      }
+
+      .btn-danger {
+        background-color: #ff1744;
+        border: none;
+      }
+
+      .btn-danger:hover {
+        background-color: #d50000;
+        box-shadow: 0 0 10px rgba(255, 23, 68, 0.6);
+      }
+
+      .btn-primary {
+        background-color: #2979ff;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        background-color: #2962ff;
+        box-shadow: 0 0 10px rgba(41, 121, 255, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Daftar Tugas Saya</h1>
+      <p>Kelola tugasmu dengan mudah dan rapi.</p>
+
+      <!-- Form tambah todo -->
+      <form id="addTodoForm" class="mb-4">
+        <div class="form-group">
+          <input type="text" id="taskInput" class="form-control" placeholder="Tugas baru..." required />
+        </div>
+        <button type="submit" class="btn btn-success btn-block">Tambah Tugas</button>
+      </form>
+
+      <% if (todos && todos.length > 0) { %>
+      <ul class="list-group" id="todosList">
+        <% todos.forEach(function(todo) { %>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>ID: <%= todo.id %> — <span id="task-<%= todo.id %>"><%= todo.task %></span></span>
+          <div>
+            <button class="btn btn-warning btn-sm mr-2" onclick="editTodo(<%= todo.id %>)">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTodo(<%= todo.id %>)">Delete</button>
+          </div>
+        </li>
+        <% }); %>
+      </ul>
+      <% } else { %>
+      <p class="text-muted text-center">Tidak ada tugas yang tersedia.</p>
+      <% } %>
+
+      <a href="/" class="btn btn-primary mt-3 btn-block">Go to Home</a>
+    </div>
+
+    <script>
+      // POST
+      document.getElementById("addTodoForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const task = document.getElementById("taskInput").value;
+        const res = await fetch("/todos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task }),
+        });
+        if (res.ok) location.reload();
+      });
+
+      // PUT
+      async function editTodo(id) {
+        const newTask = prompt("Edit tugas:");
+        if (newTask) {
+          const res = await fetch("/todos/" + id, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: newTask }),
+          });
+          if (res.ok) location.reload();
+        }
+      }
+
+      // DELETE
+      async function deleteTodo(id) {
+        if (confirm("Yakin hapus tugas ini?")) {
+          const res = await fetch("/todos/" + id, { method: "DELETE" });
+          if (res.ok) location.reload();
+        }
+      }
+    </script>
+  </body>
+</html>
