@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #452b2b;
+        color: #f5f5f5;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      h1 {
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .container {
+        max-width: 650px;
+        background: rgba(33, 33, 33, 0.9);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.6);
+      }
+
+      .form-control {
+        background-color: #1f1f1f;
+        border: 1px solid #333;
+        color: #f5f5f5;
+      }
+
+      .form-control:focus {
+        background-color: #1f1f1f;
+        color: #f5f5f5;
+        border-color: #4dabf7;
+        box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25);
+      }
+
+      .btn-primary {
+        background-color: #4dabf7;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        background-color: #339af0;
+      }
+
+      .list-group-item {
+        background-color: #1f1f1f;
+        border: 1px solid #333;
+        color: #f5f5f5;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        padding: 12px 15px;
+      }
+
+      .btn-success {
+        background-color: #51cf66;
+        border: none;
+      }
+
+      .btn-success:hover {
+        background-color: #40c057;
+      }
+
+      .btn-danger {
+        background-color: #ff6b6b;
+        border: none;
+      }
+
+      .btn-danger:hover {
+        background-color: #fa5252;
+      }
+
+      .modal-content {
+        background-color: #1f1f1f;
+        color: #f5f5f5;
+        border-radius: 10px;
+        border: 1px solid #333;
+      }
+
+      .modal-header {
+        border-bottom: 1px solid #333;
+      }
+
+      .modal-footer {
+        border-top: 1px solid #333;
+      }
+
+      .completed {
+        text-decoration: line-through;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="text-center mb-4">📝 Todo List</h1>
+
+      <!-- Form to Add New Todo -->
+      <form id="addTodoForm" class="mb-4">
+        <div class="input-group">
+          <input
+            type="text"
+            id="newTask"
+            class="form-control"
+            placeholder="Add a new task..."
+            required />
+          <div class="input-group-append">
+            <button type="submit" class="btn btn-primary">Add Task</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- List of Todos -->
+      <ul id="todoList" class="list-group">
+        <% todos.forEach(todo=> { %>
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center">
+          <span class="<%= todo.completed ? 'completed' : '' %>">
+            <%= todo.task %>
+          </span>
+          <div>
+            <button
+              class="btn btn-sm btn-success mr-2 editBtn"
+              data-id="<%= todo.id %>">
+              Edit
+            </button>
+            <button
+              class="btn btn-sm btn-danger deleteBtn"
+              data-id="<%= todo.id %>">
+              Delete
+            </button>
+          </div>
+        </li>
+        <% }); %>
+      </ul>
+
+      <!-- Edit Todo Modal -->
+      <div
+        id="editModal"
+        class="modal fade"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="editModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editModalLabel">Edit Todo</h5>
+              <button
+                type="button"
+                class="close text-white"
+                data-dismiss="modal"
+                aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form id="editTodoForm">
+                <div class="form-group">
+                  <label for="editTask">Task</label>
+                  <input
+                    type="text"
+                    id="editTask"
+                    class="form-control"
+                    required />
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">
+                  Save Changes
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap 4 JS + Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+      $(document).ready(function () {
+        let editId;
+
+        // Add new todo
+        $("#addTodoForm").on("submit", function (e) {
+          e.preventDefault();
+          const task = $("#newTask").val().trim();
+          if (task) {
+            $.ajax({
+              url: "/todos",
+              type: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({ task: task }),
+              success: function () {
+                location.reload();
+              },
+              error: function (error) {
+                console.error("Error adding task:", error.responseText);
+              },
+            });
+          }
+        });
+        // Delete a todo
+        $(".deleteBtn").on("click", function () {
+          const id = $(this).data("id");
+          $.ajax({
+            url: "/todos/" + id,
+            type: "DELETE",
+            success: function () {
+              location.reload();
+            },
+          });
+        });
+
+        // Show edit modal
+        $(".editBtn").on("click", function () {
+          editId = $(this).data("id");
+          const currentTask = $(this).closest("li").find("span").text();
+          $("#editTask").val(currentTask);
+          $("#editModal").modal("show");
+        });
+
+        // Update todo
+        $("#editTodoForm").on("submit", function (e) {
+          e.preventDefault();
+          const task = $("#editTask").val().trim();
+          if (task) {
+            $.ajax({
+              url: "/todos/" + editId,
+              type: "PUT",
+              data: JSON.stringify({ task: task, completed: false }),
+              contentType: "application/json",
+              success: function () {
+                location.reload();
+              },
+            });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
