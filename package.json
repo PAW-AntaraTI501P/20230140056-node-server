@@ -1,9 +1,10 @@
 {
   "name": "my-node-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "<img width=\"1860\" height=\"1076\" alt=\"image\" src=\"https://github.com/user-attachments/assets/b60b21eb-32bc-4ced-92b6-166c5bddc939\" />\r <img width=\"1862\" height=\"1079\" alt=\"image\" src=\"https://github.com/user-attachments/assets/5bd1b90c-1f30-40f4-a9ab-e5c177a43cd5\" />\r <img width=\"1879\" height=\"1079\" alt=\"image\" src=\"https://github.com/user-attachments/assets/306db3aa-01be-4456-9b3f-48b9fa355721\" />",
   "main": "app.js",
   "scripts": {
+    "start": "node index.js",
     "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,10 +19,19 @@
     "env": "^0.0.2",
     "express": "^5.1.0",
     "express-ejs-layouts": "^2.5.1",
+    "lodash": "^4.17.21",
     "method-override": "^3.0.0",
     "mysql2": "^3.14.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PAW-AntaraTI501P/20230140056-node-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PAW-AntaraTI501P/20230140056-node-server/issues"
+  },
+  "homepage": "https://github.com/PAW-AntaraTI501P/20230140056-node-server#readme"
 }
