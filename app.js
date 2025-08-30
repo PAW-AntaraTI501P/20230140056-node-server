@@ -1,85 +1,61 @@
+require("dotenv").config();
 const express = require("express");
-const mysql = require("mysql2");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-
 const app = express();
-const PORT = 3000;
+const cors = require("cors");
+const port = process.env.PORT || 3001;
+const db = require("./database/db");
+const expressLayouts = require("express-ejs-layouts");
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.set("view engine", "ejs");
+app.set("layout", "layouts/main");
+app.use(expressLayouts);
 
-// Middleware logger request
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
+// 🔹 Endpoint render EJS
+app.get("/", (req, res) => {
+  res.render("index", { layout: "layouts/main-layout" });
 });
 
-// Koneksi database
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "todo_db",
+app.get("/contact", (req, res) => {
+  res.render("contact", { layout: "layouts/main-layout" });
 });
 
-// GET: Ambil semua todos + filter + search + pagination
-app.get("/api/todos", (req, res) => {
-  let { search, completed, sort, order, page, limit } = req.query;
-
-  let query = "SELECT * FROM todos WHERE 1=1";
-  let params = [];
-
-  // Search task
-  if (search) {
-    query += " AND task LIKE ?";
-    params.push(`%${search}%`);
-  }
-
-  // Filter completed
-  if (completed !== undefined) {
-    query += " AND completed = ?";
-    params.push(completed === "true" ? 1 : 0);
-  }
-
-  // Sorting
-  if (sort) {
-    order = order && order.toUpperCase() === "DESC" ? "DESC" : "ASC";
-    query += ` ORDER BY ${db.escapeId(sort)} ${order}`;
-  }
-
-  // Pagination
-  if (page && limit) {
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    query += " LIMIT ? OFFSET ?";
-    params.push(parseInt(limit), offset);
-  }
-
-  db.query(query, params, (err, todos) => {
-    if (err) {
-      console.error("Database query error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    res.json({ todos, count: todos.length });
+app.get("/todo-view", (req, res) => {
+  db.query("SELECT * FROM todos", (err, todos) => {
+    if (err) return res.status(500).send("Internal Server Error");
+    res.render("todo", { todos });
   });
 });
 
-// POST: Tambah todo baru
-app.post("/api/todos", (req, res) => {
-  const { task } = req.body;
-  if (!task || task.trim() === "") {
-    return res.status(400).json({ error: "Task is required" });
+// 🔹 REST API
+// GET todos
+app.get("/api/todos", (req, res) => {
+  const { search } = req.query;
+  let query = "SELECT * FROM todos";
+  const params = [];
+
+  if (search) {
+    query += " WHERE task LIKE ?";
+    params.push(`%${search}%`);
   }
 
+  db.query(query, params, (err, todos) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
+    res.json({ todos });
+  });
+});
+
+// POST todo
+app.post("/api/todos", (req, res) => {
+  const { task } = req.body;
+  if (!task) return res.status(400).json({ error: "Task is required" });
+
   const query = "INSERT INTO todos (task, completed) VALUES (?, ?)";
-  db.query(query, [task.trim(), false], (err, result) => {
-    if (err) {
-      console.error("Database insert error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
+  db.query(query, [task, false], (err, result) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
     res.status(201).json({
-      message: "Todo added successfully",
       id: result.insertId,
       task,
       completed: false,
@@ -87,63 +63,46 @@ app.post("/api/todos", (req, res) => {
   });
 });
 
-// PUT: Update todo (task atau completed)
+// PUT todo
 app.put("/api/todos/:id", (req, res) => {
   const { id } = req.params;
-  const { task, completed } = req.body;
+  const { completed } = req.body;
 
-  // Validasi input
-  if (task !== undefined && task.trim() === "") {
-    return res.status(400).json({ error: "Task cannot be empty" });
-  }
-  if (completed !== undefined && typeof completed !== "boolean") {
-    return res.status(400).json({ error: "Completed must be true/false" });
+  if (typeof completed !== "boolean") {
+    return res
+      .status(400)
+      .json({ error: "Invalid 'completed' value. Must be a boolean." });
   }
 
-  const query = "UPDATE todos SET task = COALESCE(?, task), completed = COALESCE(?, completed) WHERE id = ?";
-  db.query(query, [task, completed, id], (err, result) => {
-    if (err) {
-      console.error("Database update error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    if (result.affectedRows === 0) {
+  const query = "UPDATE todos SET completed = ? WHERE id = ?";
+  db.query(query, [completed, id], (err, result) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
+    if (result.affectedRows === 0)
       return res.status(404).json({ error: "Todo not found" });
-    }
-    res.json({ message: "Todo updated successfully" });
+
+    res.json({ message: `Todo with ID ${id} updated successfully` });
   });
 });
 
-// PATCH: Tandai selesai/belum (toggle completed)
-app.patch("/api/todos/:id/toggle", (req, res) => {
-  const { id } = req.params;
-  db.query("UPDATE todos SET completed = NOT completed WHERE id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("Database toggle error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Todo not found" });
-    }
-    res.json({ message: "Todo toggled successfully" });
-  });
-});
-
-// DELETE: Hapus todo berdasarkan ID
+// DELETE todo
 app.delete("/api/todos/:id", (req, res) => {
   const { id } = req.params;
-  db.query("DELETE FROM todos WHERE id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("Database delete error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    if (result.affectedRows === 0) {
+  const query = "DELETE FROM todos WHERE id = ?";
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ error: "Internal Server Error" });
+    if (result.affectedRows === 0)
       return res.status(404).json({ error: "Todo not found" });
-    }
-    res.json({ message: "Todo deleted successfully" });
+
+    res.json({ message: `Todo with ID ${id} deleted successfully` });
   });
 });
 
-// Jalankan server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).send("404 - Page Not Found");
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`✅ Server running on http://localhost:${port}`);
 });

@@ -6,16 +6,19 @@ let todos = [
   { id: 2, task: "Membuat API" },
 ];
 
+// GET all
 router.get("/", (req, res) => {
   res.json(todos);
 });
 
+// GET by ID
 router.get("/:id", (req, res) => {
   const todo = todos.find((t) => t.id === parseInt(req.params.id));
   if (!todo) return res.status(404).send("Tugas tidak ditemukan");
   res.json(todo);
 });
 
+// POST
 router.post("/", (req, res) => {
   if (!req.body.task) return res.status(400).json({ error: "Task is required" });
   const newTodo = {
@@ -26,6 +29,7 @@ router.post("/", (req, res) => {
   res.status(201).json(newTodo);
 });
 
+// PUT
 router.put("/:id", (req, res) => {
   const todo = todos.find((t) => t.id === parseInt(req.params.id));
   if (!todo) return res.status(404).send("Tugas tidak ditemukan");
@@ -34,6 +38,7 @@ router.put("/:id", (req, res) => {
   res.json(todo);
 });
 
+// DELETE
 router.delete("/:id", (req, res) => {
   const todoIndex = todos.findIndex((t) => t.id === parseInt(req.params.id));
   if (todoIndex === -1) return res.status(404).send("Tugas tidak ditemukan");
@@ -41,4 +46,4 @@ router.delete("/:id", (req, res) => {
   res.status(204).send();
 });
 
-module.exports = { router, todos };
+module.exports = router;
