@@ -6,6 +6,11 @@ const port = process.env.PORT || 3001;
 const db = require("./database/db");
 const expressLayouts = require("express-ejs-layouts");
 
+// ---- Tambahkan ini untuk import route & middleware ----
+const authRoutes = require("./routes/auth"); // route otentikasi
+const authMiddleware = require("./middleware/auth"); // middleware otentikasi
+// ------------------------------------------------------
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -29,7 +34,17 @@ app.get("/todo-view", (req, res) => {
   });
 });
 
-// 🔹 REST API
+// ====================== ROUTES ======================
+// Gunakan route otentikasi
+app.use("/api/auth", authRoutes);
+
+// Lindungi route todos dengan middleware
+app.use("/api/todos", authMiddleware);
+
+// ===================================================
+
+// 🔹 REST API TODO (sekarang dilindungi middleware di atas)
+
 // GET todos
 app.get("/api/todos", (req, res) => {
   const { search } = req.query;
